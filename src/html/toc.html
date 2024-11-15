@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Table of Contents</title>
+    <style>
+        h1 { font-size: 20px; }
+
+        h2 {
+            margin: 0;
+        }
+        
+        h2.lesson {
+            font-size: 16px;
+        }
+
+        h2.session {
+            font-size: 18px;
+        }
+
+        h3 {
+            font-size: 14px;
+            font-weight: normal;
+            color: gray;
+            margin-bottom: 3px;
+            margin-top: 0;
+        }
+
+        #header { margin-bottom: 16px; }
+        #toc { display: block; }
+
+        .item {
+            margin-bottom: 20px;
+            cursor: pointer;
+        }
+
+        .item.session:not(:first-child) {
+            margin-top: 32px;
+        }
+
+        .item.highlight {
+            background-color: #282828;
+            padding: 16px 12px;
+            border-radius: 4px;
+        }
+
+        #toc .description { margin-top: 8px; font-size: 14px; color: gray; }
+
+        #toc .button {
+            margin-top: 16px;
+            padding: 6px 12px;
+            background-color: #007acc;
+            color: white;
+            font-size: 14px;
+            border-radius: 4px;
+            cursor: pointer;
+            text-align: center;
+            user-select: none;
+        }
+
+        #toc .button:hover {
+            background-color: #005fa3;
+        }
+    </style>
+</head>
+<body>
+    <section id="header">
+        <h1>Building Machine Learning Systems</h1>
+    </section>
+    <section id="toc">
+        ${tocHTML}
+    </section>
+    <script>
+        const vscode = acquireVsCodeApi();
+
+        function openFileAndMarkdown(file, markdown) {
+            vscode.postMessage({ type: 'openFileAndMarkdown', file, markdown });
+        }
+
+        function runCommandInTerminal(command, terminalName) {
+            vscode.postMessage({ 
+                type: 'runCommandInTerminal', 
+                command: command,
+                terminalName: terminalName
+            });
+        }
+        
+        function toggleVisibility(index) {
+            // Get all containers and close them first
+            const allContainers = document.querySelectorAll('[id^="container-"]');
+
+            allContainers.forEach((container) => {
+                container.style.display = 'none';  // Close all containers
+                container.parentElement.classList.remove("highlight")
+            });
+
+            // Open the selected container
+            const container = document.getElementById('container-' + index);
+
+            if (container) {
+                container.style.display = 'block';  // Show the container
+                container.parentElement.classList.add("highlight")
+            }
+        }
+    </script>
+</body>
+</html>
