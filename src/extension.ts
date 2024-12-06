@@ -33,20 +33,24 @@ class MLSchoolWebviewProvider implements vscode.WebviewViewProvider {
 			// that the user wants to perform. We can then call the respective function to
 			// perform the action.
 			switch (message.type) {
-				case "openFileAndMarkdown":
+				case "onTableOfContentItemClick":
 					// Open the file and markdown file in the editor
-					openFileAndMarkdown(message.file, message.markdown);
+					onTableOfContentItemClick(message.file, message.markdown);
 					break;
 				case "runCommandInTerminal":
 					// Run the command in a new terminal
 					runCommandInTerminal(message.command, message.terminalName);
+					break;
+				case "openUrlInBrowser":
+					// Open the URL in the default browser
+					openUrlInBrowser(message.url);
 					break;
 			}
 		});
 	}
 }
 
-async function openFileAndMarkdown(file: string, markdown: string) {
+async function onTableOfContentItemClick(file: string, markdown: string) {
 	const workspaceFolders = vscode.workspace.workspaceFolders;
 
 	if (!workspaceFolders || workspaceFolders.length === 0) {
@@ -56,89 +60,66 @@ async function openFileAndMarkdown(file: string, markdown: string) {
 
 	// Resolve the file paths relative to the workspace root
 	const workspaceRoot = workspaceFolders[0].uri.fsPath;
-	const fileUri = vscode.Uri.file(path.join(workspaceRoot, file)); // Full path to the file
-	const markdownUri = vscode.Uri.file(path.join(workspaceRoot, markdown)); // Full path to the markdown
 
-	try {
-		const fileDocument = await vscode.workspace.openTextDocument(fileUri);
-		await vscode.window.showTextDocument(fileDocument, vscode.ViewColumn.One);
+	let fileUri: vscode.Uri | null = null;
+	let markdownUri: vscode.Uri | null = null;
 
-		if (!fs.existsSync(markdownUri.fsPath)) {
-			vscode.window.showErrorMessage(`Markdown file ${markdown} not found.`);
-			return;
+	if (file) {
+		fileUri = vscode.Uri.file(path.join(workspaceRoot, file)); 
+		try {
+			const fileDocument = await vscode.workspace.openTextDocument(fileUri);
+			await vscode.window.showTextDocument(fileDocument, vscode.ViewColumn.One);	
 		}
-
-		const markdownContent = fs.readFileSync(markdownUri.fsPath, "utf-8");
-
-		if (markdownPanel) {
-			markdownPanel.webview.html = getExplanationWebviewContent(
-				markdownToHtml(markdownContent, markdownPanel.webview)
-			);
-			markdownPanel.reveal(vscode.ViewColumn.Beside);
-		} else {
-			markdownPanel = vscode.window.createWebviewPanel(
-				"markdownPreview", 
-				"Building Machine Learning Systems", 
-				vscode.ViewColumn.Beside, 
-				{ 
-					enableScripts: true,
-					localResourceRoots: [
-						vscode.Uri.joinPath(extensionContext.extensionUri, 'src', 'html'),
-						vscode.workspace.workspaceFolders?.[0]?.uri || vscode.Uri.file('')
-					]
-				} 
-			);
-
-			markdownPanel.webview.html = getExplanationWebviewContent(
-				markdownToHtml(markdownContent, markdownPanel.webview)
-			);
-
-			markdownPanel.onDidDispose(() => {
-				markdownPanel = undefined;
-			});
+		catch (error) {
+			vscode.window.showErrorMessage(
+				`Error opening file: ${(error as Error).message}`
+			);	
 		}
-	} catch (error) {
-		vscode.window.showErrorMessage(
-			`Error opening files: ${(error as Error).message}`
-		);
 	}
-}
 
-function markdownToHtml(markdown: string, webview: vscode.Webview): string {
-	const md = new MarkdownIt({
-		html: true,  // Enable HTML tags in source
-		breaks: true,
-		linkify: true
-	});
+	if (markdown) {
+		markdownUri = vscode.Uri.file(path.join(workspaceRoot, markdown));
+		try {
+			const markdownContent = fs.readFileSync(markdownUri.fsPath, "utf-8");
 
-	// Define a custom rule to resolve image paths
-	md.renderer.rules.image = (tokens, idx, options, env, self) => {
-		const token = tokens[idx];
-		let src = token.attrGet("src");
+			// If a file was provided, we want to reveal the markdown panel beside it,
+			// otherwise we'll reveal it in the active column.
+			let viewColumn = file ? vscode.ViewColumn.Beside : vscode.ViewColumn.Active;
 
-		if (src) {
-			// Convert relative paths to full URIs
-			const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-			if (workspaceFolder) {
-				const fileUri = vscode.Uri.file(
-					path.join(workspaceFolder.uri.fsPath, src)
+			if (!markdownPanel) {
+				markdownPanel = vscode.window.createWebviewPanel(
+					"markdownPreview",
+					"Building Machine Learning Systems",
+					viewColumn,
+					{
+						enableScripts: true,
+						localResourceRoots: [
+							vscode.Uri.joinPath(
+								extensionContext.extensionUri,
+								"src",
+								"html"
+							),
+							vscode.workspace.workspaceFolders?.[0]?.uri ||
+								vscode.Uri.file(""),
+						],
+					}
 				);
-				const webviewUri = webview.asWebviewUri(fileUri);
-				token.attrSet("src", webviewUri.toString()); // Replace src with the webview URI
+	
+				markdownPanel.onDidDispose(() => {
+					markdownPanel = undefined;
+				});
 			}
+
+			markdownPanel.webview.html = markdownToHtml(markdownContent, markdownPanel.webview);
+			markdownPanel.reveal(viewColumn);
+
 		}
-
-		// Render the modified token
-		return self.renderToken(tokens, idx, options);
-	};
-
-	return md.render(markdown);
-}
-
-function getExplanationWebviewContent(htmlContent: string): string {
-	const templatePath = vscode.Uri.joinPath(extensionContext.extensionUri, 'src', 'html', 'markdown.html');
-	let template = fs.readFileSync(templatePath.fsPath, 'utf8');
-	return template.replace('${content}', htmlContent);
+		catch (error) {
+			vscode.window.showErrorMessage(
+				`Error opening markdown file: ${(error as Error).message}`
+			);
+		}
+	}
 }
 
 async function runCommandInTerminal(command: string, terminalName: string) {
@@ -171,6 +152,50 @@ async function runCommandInTerminal(command: string, terminalName: string) {
 	} else {
 		console.log("Command is already running. Please wait.");
 	}
+}
+
+async function openUrlInBrowser(url: string) {
+	vscode.env.openExternal(vscode.Uri.parse(url));
+}
+
+function markdownToHtml(markdown: string, webview: vscode.Webview): string {
+	const md = new MarkdownIt({
+		html: true, // Enable HTML tags in source
+		breaks: true,
+		linkify: true,
+	});
+
+	// Define a custom rule to resolve image paths
+	md.renderer.rules.image = (tokens, idx, options, env, self) => {
+		const token = tokens[idx];
+		let src = token.attrGet("src");
+
+		if (src) {
+			// Convert relative paths to full URIs
+			const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+			if (workspaceFolder) {
+				const fileUri = vscode.Uri.file(
+					path.join(workspaceFolder.uri.fsPath, src)
+				);
+				const webviewUri = webview.asWebviewUri(fileUri);
+				token.attrSet("src", webviewUri.toString()); // Replace src with the webview URI
+			}
+		}
+
+		// Render the modified token
+		return self.renderToken(tokens, idx, options);
+	};
+
+	let htmlContent = md.render(markdown);
+
+	const templatePath = vscode.Uri.joinPath(
+		extensionContext.extensionUri,
+		"src",
+		"html",
+		"markdown.html"
+	);
+	let template = fs.readFileSync(templatePath.fsPath, "utf8");
+	return template.replace("${content}", htmlContent);
 }
 
 function createTerminal(terminalName: string) {
@@ -244,19 +269,41 @@ function getWebviewContent(webview: vscode.Webview): string {
 	// Step 2: Generate HTML by going through the flattened list once
 	const tocHTML = guide
 		.map((item) => {
-			const buttonLabel = item.button || "Run";
-			const terminalName = item.terminal || "mlschool";
-
-			const headerHTML =
+			const header =
 				item.type === "lesson"
 					? `<h3>Session ${item.sessionIndex} - ${item.sessionLabel}</h3>`
 					: `<h3>Session ${item.index}</h3>`;
 
+			const actions = item.actions
+				? item.actions
+						.map(
+							(action: {
+								command: any;
+								terminal: any;
+								label: any;
+								url: any;
+							}) => {
+								if (action.command) {
+									const terminal = action.terminal || "mlschool";
+									return `<div class="button" onclick="event.stopPropagation(); runCommandInTerminal('${action.command}', '${terminal}')">${action.label}</div>`;
+								} else if (action.url) {
+									return `<div class="button" onclick="event.stopPropagation(); openUrlInBrowser('${action.url}')">${action.label}</div>`;
+								} else {
+									return `<div class="button">-</div>`;
+								}
+							}
+						)
+						.join("")
+				: "";
+
+			let file = item.file || "";
+			let markdown = item.markdown || "";
+
 			return `
             <div class="item ${item.type}" onclick="toggleVisibility('${
 				item.itemIndex
-			}'); openFileAndMarkdown('${item.file}', '${item.markdown}')">
-                ${headerHTML}
+			}'); onTableOfContentItemClick('${file}', '${markdown}')">
+                ${header}
                 <h2 class='${item.type}'>
                     ${
 						item.type === "lesson"
@@ -270,11 +317,7 @@ function getWebviewContent(webview: vscode.Webview): string {
 					item.itemIndex
 				}" class="toc-container" style="display: none;">
                     <div class="description">${item.description || ""}</div>
-                    ${
-						item.command
-							? `<div id="button-${item.itemIndex}" class="button" onclick="event.stopPropagation(); runCommandInTerminal('${item.command}', '${terminalName}')">${buttonLabel}</div>`
-							: ""
-					}
+					${actions}
                 </div>
             </div>
             `;
@@ -282,11 +325,16 @@ function getWebviewContent(webview: vscode.Webview): string {
 		.join("");
 
 	// Read the HTML template
-	const templatePath = path.join(extensionContext.extensionPath, 'src', 'html', 'toc.html');
-	let template = fs.readFileSync(templatePath, 'utf-8');
-	
+	const templatePath = path.join(
+		extensionContext.extensionPath,
+		"src",
+		"html",
+		"toc.html"
+	);
+	let template = fs.readFileSync(templatePath, "utf-8");
+
 	// Replace the placeholder with the actual TOC HTML
-	return template.replace('${tocHTML}', tocHTML);
+	return template.replace("${tocHTML}", tocHTML);
 }
 
 // Load Table of Contents data from the file

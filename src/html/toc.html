@@ -74,8 +74,8 @@
     <script>
         const vscode = acquireVsCodeApi();
 
-        function openFileAndMarkdown(file, markdown) {
-            vscode.postMessage({ type: 'openFileAndMarkdown', file, markdown });
+        function onTableOfContentItemClick(file, markdown) {
+            vscode.postMessage({ type: 'onTableOfContentItemClick', file, markdown });
         }
 
         function runCommandInTerminal(command, terminalName) {
@@ -83,6 +83,13 @@
                 type: 'runCommandInTerminal', 
                 command: command,
                 terminalName: terminalName
+            });
+        }
+
+        function openUrlInBrowser(url) {
+            vscode.postMessage({ 
+                type: 'openUrlInBrowser', 
+                url: url,
             });
         }
         
