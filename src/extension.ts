@@ -67,8 +67,12 @@ async function onTableOfContentItemClick(file: string, markdown: string) {
 	if (file) {
 		fileUri = vscode.Uri.file(path.join(workspaceRoot, file)); 
 		try {
-			const fileDocument = await vscode.workspace.openTextDocument(fileUri);
-			await vscode.window.showTextDocument(fileDocument, vscode.ViewColumn.One);	
+			if (fileUri.fsPath.endsWith('.ipynb')) {
+				await vscode.commands.executeCommand('vscode.openWith', fileUri, 'jupyter-notebook', vscode.ViewColumn.One);
+			} else {
+				const fileDocument = await vscode.workspace.openTextDocument(fileUri);
+				await vscode.window.showTextDocument(fileDocument, vscode.ViewColumn.One);
+			}
 		}
 		catch (error) {
 			vscode.window.showErrorMessage(
@@ -86,7 +90,10 @@ async function onTableOfContentItemClick(file: string, markdown: string) {
 			// otherwise we'll reveal it in the active column.
 			let viewColumn = file ? vscode.ViewColumn.Beside : vscode.ViewColumn.Active;
 
-			if (!markdownPanel) {
+			if (markdownPanel) {
+				markdownPanel.webview.html = markdownToHtml(markdownContent, markdownPanel.webview);
+				markdownPanel.reveal(viewColumn);
+			} else {
 				markdownPanel = vscode.window.createWebviewPanel(
 					"markdownPreview",
 					"Building Machine Learning Systems",
@@ -108,11 +115,9 @@ async function onTableOfContentItemClick(file: string, markdown: string) {
 				markdownPanel.onDidDispose(() => {
 					markdownPanel = undefined;
 				});
+
+				markdownPanel.webview.html = markdownToHtml(markdownContent, markdownPanel.webview);
 			}
-
-			markdownPanel.webview.html = markdownToHtml(markdownContent, markdownPanel.webview);
-			markdownPanel.reveal(viewColumn);
-
 		}
 		catch (error) {
 			vscode.window.showErrorMessage(
