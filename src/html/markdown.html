@@ -91,10 +91,24 @@
 
         document.addEventListener('click', function(event) {
             const target = event.target;
-            if (target.tagName === 'A' && target.href.startsWith('vscode-webview://')) {
-                event.preventDefault();
-                vscode.postMessage({ command: 'openFile', url: target.href });
+            let href = null;
+
+            console.log("Markdown View onClick - Target: ", target.tagName, ". Href: ", target.href);
+
+            // We want to handle clicks on code blocks inside an anchor tag. 
+            if (target.tagName === 'CODE' && target.parentElement.tagName === 'A') {
+                href = target.parentElement.href;
             }
+            // This will handle clicks on an anchor tag directly.
+            else if (target.tagName === 'A') {
+                href = target.href;
+            }
+
+            if (href && href.startsWith('vscode-webview://')) {
+                event.preventDefault();
+                vscode.postMessage({ command: 'openFile', url: href });
+            }
+
         });
     </script>
 </body>
