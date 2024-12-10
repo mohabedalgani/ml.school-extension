@@ -86,5 +86,16 @@
 </head>
 <body>
     ${content}
+    <script>
+        const vscode = acquireVsCodeApi();
+
+        document.addEventListener('click', function(event) {
+            const target = event.target;
+            if (target.tagName === 'A' && target.href.startsWith('vscode-webview://')) {
+                event.preventDefault();
+                vscode.postMessage({ command: 'openFile', url: target.href });
+            }
+        });
+    </script>
 </body>
 </html>

@@ -51,38 +51,10 @@ class MLSchoolWebviewProvider implements vscode.WebviewViewProvider {
 }
 
 async function onTableOfContentItemClick(file: string, markdown: string) {
-	const workspaceFolders = vscode.workspace.workspaceFolders;
-
-	if (!workspaceFolders || workspaceFolders.length === 0) {
-		vscode.window.showErrorMessage("No workspace folder is open.");
-		return;
-	}
-
-	// Resolve the file paths relative to the workspace root
-	const workspaceRoot = workspaceFolders[0].uri.fsPath;
-
-	let fileUri: vscode.Uri | null = null;
-	let markdownUri: vscode.Uri | null = null;
-
-	if (file) {
-		fileUri = vscode.Uri.file(path.join(workspaceRoot, file)); 
-		try {
-			if (fileUri.fsPath.endsWith('.ipynb')) {
-				await vscode.commands.executeCommand('vscode.openWith', fileUri, 'jupyter-notebook', vscode.ViewColumn.One);
-			} else {
-				const fileDocument = await vscode.workspace.openTextDocument(fileUri);
-				await vscode.window.showTextDocument(fileDocument, vscode.ViewColumn.One);
-			}
-		}
-		catch (error) {
-			vscode.window.showErrorMessage(
-				`Error opening file: ${(error as Error).message}`
-			);	
-		}
-	}
+	openFile(file);
 
 	if (markdown) {
-		markdownUri = vscode.Uri.file(path.join(workspaceRoot, markdown));
+		const markdownUri = vscode.Uri.file(path.join(getWorkspaceRoot(), markdown));
 		try {
 			const markdownContent = fs.readFileSync(markdownUri.fsPath, "utf-8");
 
@@ -92,7 +64,7 @@ async function onTableOfContentItemClick(file: string, markdown: string) {
 
 			if (markdownPanel) {
 				markdownPanel.webview.html = markdownToHtml(markdownContent, markdownPanel.webview);
-				markdownPanel.reveal(viewColumn);
+				markdownPanel.reveal();
 			} else {
 				markdownPanel = vscode.window.createWebviewPanel(
 					"markdownPreview",
@@ -117,6 +89,16 @@ async function onTableOfContentItemClick(file: string, markdown: string) {
 				});
 
 				markdownPanel.webview.html = markdownToHtml(markdownContent, markdownPanel.webview);
+
+                markdownPanel.webview.onDidReceiveMessage(
+                    message => {
+                        switch (message.command) {
+                            case 'openFile':
+                                openFile(vscode.Uri.parse(message.url).fsPath);
+                                break;
+                        }
+                    },
+                );
 			}
 		}
 		catch (error) {
@@ -161,6 +143,35 @@ async function runCommandInTerminal(command: string, terminalName: string) {
 
 async function openUrlInBrowser(url: string) {
 	vscode.env.openExternal(vscode.Uri.parse(url));
+}
+
+async function openFile(file: string) {
+	if (file) {
+		const fileUri = vscode.Uri.file(path.join(getWorkspaceRoot(), file)); 
+		try {
+			if (fileUri.fsPath.endsWith('.ipynb')) {
+				await vscode.commands.executeCommand('vscode.openWith', fileUri, 'jupyter-notebook', vscode.ViewColumn.One);
+			} else {
+				const fileDocument = await vscode.workspace.openTextDocument(fileUri);
+				await vscode.window.showTextDocument(fileDocument, vscode.ViewColumn.One);
+			}
+		}
+		catch (error) {
+			vscode.window.showErrorMessage(
+				`Error opening file: ${(error as Error).message}`
+			);	
+		}
+	}
+}
+
+function getWorkspaceRoot(): string {
+	const workspaceFolders = vscode.workspace.workspaceFolders;
+
+	if (!workspaceFolders || workspaceFolders.length === 0) {
+		throw new Error("No workspace folder is open.");
+	}
+
+	return workspaceFolders[0].uri.fsPath;
 }
 
 function markdownToHtml(markdown: string, webview: vscode.Webview): string {
