@@ -106,7 +106,12 @@
 
             if (href && href.startsWith('vscode-webview://')) {
                 event.preventDefault();
-                vscode.postMessage({ command: 'openFile', url: href });
+
+                if (href.endsWith('.md')) {
+                    vscode.postMessage({ command: 'openMarkdown', markdown: href });
+                } else {
+                    vscode.postMessage({ command: 'openFile', file: href });
+                }
             }
 
         });

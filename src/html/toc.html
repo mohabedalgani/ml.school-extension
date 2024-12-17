@@ -78,21 +78,15 @@
             vscode.postMessage({ type: 'onTableOfContentItemClick', file, markdown });
         }
 
-        function runCommandInTerminal(command, terminalName) {
+        function runAction(action, target, terminal) {
             vscode.postMessage({ 
-                type: 'runCommandInTerminal', 
-                command: command,
-                terminalName: terminalName
+                type: 'runAction', 
+                action: action,
+                target: target,
+                terminal: terminal
             });
         }
 
-        function openUrlInBrowser(url) {
-            vscode.postMessage({ 
-                type: 'openUrlInBrowser', 
-                url: url,
-            });
-        }
-        
         function toggleVisibility(index) {
             // Get all containers and close them first
             const allContainers = document.querySelectorAll('[id^="container-"]');

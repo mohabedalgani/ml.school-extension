@@ -37,30 +37,79 @@ class MLSchoolWebviewProvider implements vscode.WebviewViewProvider {
 					// Open the file and markdown file in the editor
 					onTableOfContentItemClick(message.file, message.markdown);
 					break;
-				case "runCommandInTerminal":
-					// Run the command in a new terminal
-					runCommandInTerminal(message.command, message.terminalName);
-					break;
-				case "openUrlInBrowser":
-					// Open the URL in the default browser
-					openUrlInBrowser(message.url);
+				case "runAction":
+					runAction(message.action, message.target, message.terminal);
 					break;
 			}
 		});
 	}
 }
 
+async function runCommandAction(command: string, terminalName: string) {
+	let terminalIndex = terminals.findIndex((t) => t.terminal.name === terminalName);
+
+	/**
+	 * If we found the terminal in our list but it doesn't exist in the IDE, we need to
+	 * remove it from the list.
+	 **/
+	if (
+		terminalIndex !== -1 &&
+		!vscode.window.terminals.some((t) => t.name === terminalName)
+	) {
+		terminals.splice(terminalIndex, 1);
+	}
+
+	// If we didn't find the terminal in our list, we can create a new terminal.
+	if (terminalIndex === -1) {
+		const terminal = createTerminal(terminalName);
+		terminals.push({ terminal, idle: true });
+		terminalIndex = terminals.length - 1;
+	}
+
+	// We will only run the command if the terminal is idle.
+	if (terminals[terminalIndex].idle) {
+		terminals[terminalIndex].idle = false;
+		const terminal = terminals[terminalIndex].terminal;
+		terminal.show();
+		terminal.sendText(command);
+	} else {
+		console.log("Command is already running. Please wait.");
+	}
+}
+
+async function runBrowserAction(url: string) {
+	vscode.env.openExternal(vscode.Uri.parse(url));
+}
+
 async function onTableOfContentItemClick(file: string, markdown: string) {
 	openFile(file);
+	openMarkdown(markdown, file ? vscode.ViewColumn.Beside : vscode.ViewColumn.Active);
+}
 
+async function openFile(file: string) {
+	if (file) {
+		const fileUri = vscode.Uri.file(path.join(getWorkspaceRoot(), file)); 
+		try {
+			if (fileUri.fsPath.endsWith('.ipynb')) {
+				await vscode.commands.executeCommand('vscode.openWith', fileUri, 'jupyter-notebook', vscode.ViewColumn.One);
+			} else {
+				const fileDocument = await vscode.workspace.openTextDocument(fileUri);
+				await vscode.window.showTextDocument(fileDocument, vscode.ViewColumn.One);
+			}
+		}
+		catch (error) {
+			vscode.window.showErrorMessage(
+				`Error opening file: ${(error as Error).message}`
+			);	
+		}
+	}
+}
+
+async function openMarkdown(markdown: string, viewColumn: vscode.ViewColumn = vscode.ViewColumn.Active) {
 	if (markdown) {
 		const markdownUri = vscode.Uri.file(path.join(getWorkspaceRoot(), markdown));
 		try {
 			const markdownContent = fs.readFileSync(markdownUri.fsPath, "utf-8");
-
-			// If a file was provided, we want to reveal the markdown panel beside it,
-			// otherwise we'll reveal it in the active column.
-			let viewColumn = file ? vscode.ViewColumn.Beside : vscode.ViewColumn.Active;
 
 			if (markdownPanel) {
 				markdownPanel.webview.html = markdownToHtml(markdownContent, markdownPanel.webview);
@@ -94,8 +143,11 @@ async function onTableOfContentItemClick(file: string, markdown: string) {
                     message => {
                         switch (message.command) {
                             case 'openFile':
-                                openFile(vscode.Uri.parse(message.url).fsPath);
+                                openFile(vscode.Uri.parse(message.file).fsPath);
                                 break;
+							case 'openMarkdown':
+								openMarkdown(vscode.Uri.parse(message.markdown).fsPath);
+								break;
                         }
                     },
                 );
@@ -109,58 +161,15 @@ async function onTableOfContentItemClick(file: string, markdown: string) {
 	}
 }
 
-async function runCommandInTerminal(command: string, terminalName: string) {
-	let terminalIndex = terminals.findIndex((t) => t.terminal.name === terminalName);
-
-	/**
-	 * If we found the terminal in our list but it doesn't exist in the IDE, we need to
-	 * remove it from the list.
-	 **/
-	if (
-		terminalIndex !== -1 &&
-		!vscode.window.terminals.some((t) => t.name === terminalName)
-	) {
-		terminals.splice(terminalIndex, 1);
+async function runAction(action: string, target: string, terminal: string) {
+	if (action === "command") {
+		runCommandAction(target, terminal);
 	}
-
-	// If we didn't find the terminal in our list, we can create a new terminal.
-	if (terminalIndex === -1) {
-		const terminal = createTerminal(terminalName);
-		terminals.push({ terminal, idle: true });
-		terminalIndex = terminals.length - 1;
+	else if (action === "browser") {
+		runBrowserAction(target);
 	}
-
-	// We will only run the command if the terminal is idle.
-	if (terminals[terminalIndex].idle) {
-		terminals[terminalIndex].idle = false;
-		const terminal = terminals[terminalIndex].terminal;
-		terminal.show();
-		terminal.sendText(command);
-	} else {
-		console.log("Command is already running. Please wait.");
-	}
-}
-
-async function openUrlInBrowser(url: string) {
-	vscode.env.openExternal(vscode.Uri.parse(url));
-}
-
-async function openFile(file: string) {
-	if (file) {
-		const fileUri = vscode.Uri.file(path.join(getWorkspaceRoot(), file)); 
-		try {
-			if (fileUri.fsPath.endsWith('.ipynb')) {
-				await vscode.commands.executeCommand('vscode.openWith', fileUri, 'jupyter-notebook', vscode.ViewColumn.One);
-			} else {
-				const fileDocument = await vscode.workspace.openTextDocument(fileUri);
-				await vscode.window.showTextDocument(fileDocument, vscode.ViewColumn.One);
-			}
-		}
-		catch (error) {
-			vscode.window.showErrorMessage(
-				`Error opening file: ${(error as Error).message}`
-			);	
-		}
+	else if (action === "file") {
+		openFile(target);
 	}
 }
 
@@ -294,19 +303,16 @@ function getWebviewContent(webview: vscode.Webview): string {
 				? item.actions
 						.map(
 							(action: {
-								command: any;
+								action: any;
+								target: any;
 								terminal: any;
 								label: any;
-								url: any;
 							}) => {
-								if (action.command) {
-									const terminal = action.terminal || "mlschool";
-									return `<div class="button" onclick="event.stopPropagation(); runCommandInTerminal('${action.command}', '${terminal}')">${action.label}</div>`;
-								} else if (action.url) {
-									return `<div class="button" onclick="event.stopPropagation(); openUrlInBrowser('${action.url}')">${action.label}</div>`;
-								} else {
-									return `<div class="button">-</div>`;
-								}
+								if (action.action === undefined || action.action === "") {
+									action.action = "command";
+								} 
+
+							    return `<div class="button" onclick="event.stopPropagation(); runAction('${action.action}', '${action.target}', '${action.terminal}')">${action.label}</div>`;	
 							}
 						)
 						.join("")
