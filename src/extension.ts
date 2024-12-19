@@ -81,6 +81,11 @@ async function runBrowserAction(url: string) {
 	vscode.env.openExternal(vscode.Uri.parse(url));
 }
 
+async function runTestAction(target: string, command: string) {
+	openFile(target);
+	runCommandAction(command, "");
+}
+
 async function onTableOfContentItemClick(file: string, markdown: string) {
 	openFile(file);
 	openMarkdown(markdown, file ? vscode.ViewColumn.Beside : vscode.ViewColumn.Active);
@@ -168,7 +173,11 @@ async function runAction(action: string, target: string, terminal: string) {
 	else if (action === "browser") {
 		runBrowserAction(target);
 	}
-	else if (action === "file") {
+	else if (action === "tests") {
+		const [file, command] = target.split("|");
+		runTestAction(file.trim(), command.trim());
+	}
+	else if (action === "test") {
 		openFile(target);
 	}
 }
@@ -291,6 +300,14 @@ function getWebviewContent(webview: vscode.Webview): string {
 		return [sessionItem, ...lessonItems];
 	});
 
+	const openUnitTestsSVGIcon = webview.asWebviewUri(
+        vscode.Uri.file(path.join(extensionContext.extensionPath, 'resources', 'file.svg'))
+    );
+
+	const runUnitTestsSVGIcon = webview.asWebviewUri(
+        vscode.Uri.file(path.join(extensionContext.extensionPath, 'resources', 'run.svg'))
+    );
+
 	// Step 2: Generate HTML by going through the flattened list once
 	const tocHTML = guide
 		.map((item) => {
@@ -303,16 +320,22 @@ function getWebviewContent(webview: vscode.Webview): string {
 				? item.actions
 						.map(
 							(action: {
+								label: any;
 								action: any;
 								target: any;
 								terminal: any;
-								label: any;
 							}) => {
 								if (action.action === undefined || action.action === "") {
 									action.action = "command";
 								} 
 
-							    return `<div class="button" onclick="event.stopPropagation(); runAction('${action.action}', '${action.target}', '${action.terminal}')">${action.label}</div>`;	
+							    return `<div class="button" 
+									onclick="event.stopPropagation(); 
+										runAction(
+											'${action.action}', 
+											'${action.target}', 
+											'${action.terminal}'
+										)">${action.label}</div>`;	
 							}
 						)
 						.join("")
