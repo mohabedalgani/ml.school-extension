@@ -177,7 +177,7 @@ async function runAction(action: string, target: string, terminal: string) {
 		const [file, command] = target.split("|");
 		runTestAction(file.trim(), command.trim());
 	}
-	else if (action === "test") {
+	else if (action === "file") {
 		openFile(target);
 	}
 }
