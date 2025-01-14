@@ -8,6 +8,7 @@ let markdownPanel: vscode.WebviewPanel | undefined;
 let extensionContext: vscode.ExtensionContext;
 
 const TERMINAL_NAME = "ml.school";
+const MARKDOWN_VIEW_TITLE = "Building Machine Learning Systems";
 
 export function activate(context: vscode.ExtensionContext) {
 	extensionContext = context;
@@ -129,7 +130,7 @@ async function openMarkdown(markdown: string, viewColumn: vscode.ViewColumn = vs
 			} else {
 				markdownPanel = vscode.window.createWebviewPanel(
 					"markdownPreview",
-					"Building Machine Learning Systems",
+					MARKDOWN_VIEW_TITLE,
 					viewColumn,
 					{
 						enableScripts: true,
@@ -368,7 +369,6 @@ function getWebviewContent(webview: vscode.Webview): string {
 		})
 		.join("");
 
-	// Read the HTML template
 	const templatePath = path.join(
 		extensionContext.extensionPath,
 		"src",
@@ -377,7 +377,6 @@ function getWebviewContent(webview: vscode.Webview): string {
 	);
 	let template = fs.readFileSync(templatePath, "utf-8");
 
-	// Replace the placeholder with the actual TOC HTML
 	return template.replace("${tocHTML}", tocHTML);
 }
 
@@ -399,13 +398,13 @@ function getTOCData(): any[] {
 	if (fs.existsSync(tocPath)) {
 		try {
 			const content = fs.readFileSync(tocPath, "utf-8");
-			return JSON.parse(content); // Return the parsed TOC data
+			return JSON.parse(content);
 		} catch (error) {
 			vscode.window.showErrorMessage("Error parsing toc.json.");
 			return [];
 		}
 	} else {
-		vscode.window.showErrorMessage("mlschool-toc.json not found in the workspace.");
+		vscode.window.showErrorMessage("The guide wasn't found in the workspace.");
 		return [];
 	}
 }
