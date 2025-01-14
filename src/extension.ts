@@ -7,6 +7,8 @@ let terminals: { terminal: vscode.Terminal; idle: boolean }[] = [];
 let markdownPanel: vscode.WebviewPanel | undefined;
 let extensionContext: vscode.ExtensionContext;
 
+const TERMINAL_NAME = "ml.school";
+
 export function activate(context: vscode.ExtensionContext) {
 	extensionContext = context;
 	// Register the webview view provider so the webview is displayed when the view is clicked
@@ -46,6 +48,11 @@ class MLSchoolWebviewProvider implements vscode.WebviewViewProvider {
 }
 
 async function runCommandAction(command: string, terminalName: string) {
+	console.log(`Running command: ${command} in terminal: ${terminalName}`);
+	if (!terminalName || terminalName === "undefined") {
+		terminalName = TERMINAL_NAME;
+	}
+
 	let terminalIndex = terminals.findIndex((t) => t.terminal.name === terminalName);
 
 	/**
@@ -299,14 +306,6 @@ function getWebviewContent(webview: vscode.Webview): string {
 		);
 		return [sessionItem, ...lessonItems];
 	});
-
-	const openUnitTestsSVGIcon = webview.asWebviewUri(
-        vscode.Uri.file(path.join(extensionContext.extensionPath, 'resources', 'file.svg'))
-    );
-
-	const runUnitTestsSVGIcon = webview.asWebviewUri(
-        vscode.Uri.file(path.join(extensionContext.extensionPath, 'resources', 'run.svg'))
-    );
 
 	// Step 2: Generate HTML by going through the flattened list once
 	const tocHTML = guide
