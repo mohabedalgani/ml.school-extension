@@ -13,6 +13,7 @@ const MARKDOWN_VIEW_TITLE = "Building Machine Learning Systems";
 export function activate(context: vscode.ExtensionContext) {
 	extensionContext = context;
 	// Register the webview view provider so the webview is displayed when the view is clicked
+
 	const provider = new MLSchoolWebviewProvider(extensionContext);
 	context.subscriptions.push(
 		vscode.window.registerWebviewViewProvider("mlschoolWebview", provider)
@@ -230,13 +231,8 @@ function markdownToHtml(markdown: string, webview: vscode.Webview): string {
 
 	let htmlContent = md.render(markdown);
 
-	const templatePath = vscode.Uri.joinPath(
-		extensionContext.extensionUri,
-		"src",
-		"html",
-		"markdown.html"
-	);
-	let template = fs.readFileSync(templatePath.fsPath, "utf8");
+	const templatePath = path.join(extensionContext.extensionPath, "resources", "markdown.html");
+	let template = fs.readFileSync(templatePath, "utf8");
 	return template.replace("${content}", htmlContent);
 }
 
@@ -369,12 +365,7 @@ function getWebviewContent(webview: vscode.Webview): string {
 		})
 		.join("");
 
-	const templatePath = path.join(
-		extensionContext.extensionPath,
-		"src",
-		"html",
-		"toc.html"
-	);
+	const templatePath = path.join(extensionContext.extensionPath, "resources", "toc.html");
 	let template = fs.readFileSync(templatePath, "utf-8");
 
 	return template.replace("${tocHTML}", tocHTML);
