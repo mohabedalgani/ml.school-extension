@@ -1,0 +1,71 @@
+/* Base */
+*, *::before, *::after { box-sizing: border-box; }
+html, body, #root { height: 100%; min-height: 100%; }
+body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Kufi Arabic", "Cairo", sans-serif; background: #fff; color: #111827; }
+
+/* RTL */
+html[dir="rtl"] body { direction: rtl; }
+.rtl { direction: rtl; }
+.ltr { direction: ltr; }
+
+/* Layout */
+.layout-root { display: grid; grid-template-rows: 1fr auto; height: 100vh; min-height: 0; }
+.layout-top { display: grid; grid-template-columns: 1fr 1.2fr 0.8fr; grid-template-areas: 'editor content toc'; gap: 12px; padding: 12px; align-items: stretch; min-height: 0; }
+@media (max-width: 768px) { .layout-top { grid-template-columns: 1fr; } }
+.panel { border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; background: #fff; display: flex; flex-direction: column; min-height: 0; height: 100%; }
+.panel-header { padding: 8px 12px; border-bottom: 1px solid #e5e7eb; font-weight: 600; background: #f9fafb; }
+.panel-body { padding: 8px 12px; overflow: auto; flex: 1; min-height: 0; }
+.output-panel { border-top: 1px solid #e5e7eb; padding: 8px 12px; background: #0b1021; color: #e5e7eb; height: 160px; overflow: auto; }
+
+/* App container improvements */
+.app-container { 
+  height: 100vh; 
+  overflow: hidden; 
+}
+
+.app-main { 
+  flex: 1; 
+  min-height: 0; 
+  overflow: hidden; 
+}
+
+/* Grid areas */
+.area-editor { grid-area: editor; }
+.area-content { grid-area: content; }
+.area-toc { grid-area: toc; }
+
+/* Night mode */
+body.night { background: #181a20; color: #e0e0e0; }
+body.night .panel { background: #181a20; border-color: #2a2e36; }
+body.night .panel-header { background: #1f232b; border-color: #2a2e36; color: #e0e0e0; }
+body.night .output-panel { background: #0b1021; color: #e5e7eb; }
+
+/* Monaco Editor Container Styling */
+.editor-container {
+  direction: ltr !important;
+  unicode-bidi: isolate;
+}
+
+.editor-container .monaco-editor, 
+.editor-container .monaco-editor * { 
+  direction: ltr !important; 
+  text-align: left !important; 
+}
+
+.editor-container .monaco-editor {
+  background-color: #1e1e1e !important;
+}
+
+.editor-container .monaco-editor .margin {
+  background-color: #1e1e1e !important;
+}
+
+.editor-container .monaco-editor .monaco-editor-background {
+  background-color: #1e1e1e !important;
+}
+
+/* Ensure proper focus styling */
+.editor-container:focus-within {
+  outline: 2px solid #2563eb;
+  outline-offset: -2px;
+}

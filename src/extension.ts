@@ -368,7 +368,18 @@ function getWebviewContent(webview: vscode.Webview): string {
 	const templatePath = path.join(extensionContext.extensionPath, "resources", "toc.html");
 	let template = fs.readFileSync(templatePath, "utf-8");
 
-	return template.replace("${tocHTML}", tocHTML);
+	// Append the toggle button explicitly to ensure it appears
+	const toggleButton = `<section id="header">
+		<h1>Building Machine Learning Systems</h1>
+		<button id="toggle-mode" title="Toggle night/day mode">🌙 Night Mode</button>
+	</section>`;
+
+	const finalHTML = template.replace("${tocHTML}", toggleButton + tocHTML);
+
+	// Log the final HTML for debugging
+	console.log("Final Webview HTML:", finalHTML);
+
+	return finalHTML;
 }
 
 // Load Table of Contents data from the file
@@ -377,6 +388,7 @@ function getTOCData(): any[] {
 
 	// Check if there is an open workspace
 	if (!workspaceFolders || workspaceFolders.length === 0) {
+		console.log("No workspace folder is open.");
 		vscode.window.showErrorMessage("No workspace folder is open.");
 		return [];
 	}
@@ -384,17 +396,23 @@ function getTOCData(): any[] {
 	// Construct the path to mlschool-toc.json in the workspace root
 	const workspaceRoot = workspaceFolders[0].uri.fsPath;
 	const tocPath = path.join(workspaceRoot, ".guide", "toc.json");
+	
+	console.log("Looking for TOC file at:", tocPath);
 
 	// Check if the file exists and load it
 	if (fs.existsSync(tocPath)) {
 		try {
 			const content = fs.readFileSync(tocPath, "utf-8");
-			return JSON.parse(content);
+			const parsedData = JSON.parse(content);
+			console.log("Successfully loaded TOC data with", parsedData.length, "items");
+			return parsedData;
 		} catch (error) {
+			console.error("Error parsing toc.json:", error);
 			vscode.window.showErrorMessage("Error parsing toc.json.");
 			return [];
 		}
 	} else {
+		console.log("TOC file not found at:", tocPath);
 		vscode.window.showErrorMessage("The guide wasn't found in the workspace.");
 		return [];
 	}

@@ -1,0 +1,31 @@
+[
+  {
+    "label": "Session 1: Introduction",
+    "description": "Introduction and fundamentals",
+    "lessons": [
+      { "label": "Introduction", "markdown": "session1/introduction.md" },
+      { "label": "What is Machine Learning?", "markdown": "session1/lesson1.md" },
+      { "label": "Types of Machine Learning", "markdown": "session1/lesson2.md" }
+    ]
+  },
+  {
+    "label": "Session 2: Preprocessing",
+    "description": "Data preprocessing and cleaning",
+    "lessons": [
+      { "label": "Data Preprocessing", "markdown": "session2/preprocessing.md" },
+      {
+        "label": "Data Cleaning Example",
+        "file": "session2/data_cleaning_example.py",
+        "actions": [
+          {
+            "label": "تشغيل المثال",
+            "action": "command",
+            "target": "python session2/data_cleaning_example.py",
+            "terminal": "ml.school"
+          }
+        ]
+      }
+    ]
+  }
+]
+

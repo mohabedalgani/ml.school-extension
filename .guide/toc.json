@@ -1,0 +1,196 @@
+[
+  {
+    "label": "Introduction to Machine Learning",
+    "description": "Get started with the fundamentals of machine learning and understand the basic concepts.",
+    "file": "session1/introduction.md",
+    "markdown": "session1/introduction.md",
+    "actions": [
+      {
+        "label": "Open Introduction",
+        "action": "file",
+        "target": "session1/introduction.md"
+      },
+      {
+        "label": "Run Setup",
+        "action": "command",
+        "target": "python -c \"print('ML Environment Ready!')\"",
+        "terminal": "ml.school"
+      }
+    ],
+    "lessons": [
+      {
+        "label": "What is Machine Learning?",
+        "description": "Understanding the basics of machine learning and its applications.",
+        "file": "session1/lesson1.md",
+        "markdown": "session1/lesson1.md",
+        "actions": [
+          {
+            "label": "View Lesson",
+            "action": "file",
+            "target": "session1/lesson1.md"
+          }
+        ]
+      },
+      {
+        "label": "Types of Machine Learning",
+        "description": "Supervised, unsupervised, and reinforcement learning.",
+        "file": "session1/lesson2.md",
+        "markdown": "session1/lesson2.md",
+        "actions": [
+          {
+            "label": "View Lesson",
+            "action": "file",
+            "target": "session1/lesson2.md"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "label": "Data Preprocessing",
+    "description": "Learn how to prepare and clean data for machine learning models.",
+    "file": "session2/preprocessing.md",
+    "markdown": "session2/preprocessing.md",
+    "actions": [
+      {
+        "label": "Open Session",
+        "action": "file",
+        "target": "session2/preprocessing.md"
+      },
+      {
+        "label": "Install Dependencies",
+        "action": "command",
+        "target": "pip install pandas numpy scikit-learn",
+        "terminal": "ml.school"
+      }
+    ],
+    "lessons": [
+      {
+        "label": "Data Cleaning",
+        "description": "Techniques for cleaning and preparing data.",
+        "file": "session2/lesson1.md",
+        "markdown": "session2/lesson1.md",
+        "actions": [
+          {
+            "label": "View Lesson",
+            "action": "file",
+            "target": "session2/lesson1.md"
+          },
+          {
+            "label": "Run Example",
+            "action": "command",
+            "target": "python session2/data_cleaning_example.py",
+            "terminal": "ml.school"
+          }
+        ]
+      },
+      {
+        "label": "Feature Engineering",
+        "description": "Creating and selecting features for your models.",
+        "file": "session2/lesson2.md",
+        "markdown": "session2/lesson2.md",
+        "actions": [
+          {
+            "label": "View Lesson",
+            "action": "file",
+            "target": "session2/lesson2.md"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "label": "Supervised Learning",
+    "description": "Explore supervised learning algorithms and their applications.",
+    "file": "session3/supervised.md",
+    "markdown": "session3/supervised.md",
+    "actions": [
+      {
+        "label": "Open Session",
+        "action": "file",
+        "target": "session3/supervised.md"
+      },
+      {
+        "label": "Open Jupyter",
+        "action": "command",
+        "target": "jupyter notebook",
+        "terminal": "ml.school"
+      }
+    ],
+    "lessons": [
+      {
+        "label": "Linear Regression",
+        "description": "Understanding linear regression and its implementation.",
+        "file": "session3/linear_regression.md",
+        "markdown": "session3/linear_regression.md",
+        "actions": [
+          {
+            "label": "View Lesson",
+            "action": "file",
+            "target": "session3/linear_regression.md"
+          },
+          {
+            "label": "Run Example",
+            "action": "command",
+            "target": "python session3/linear_regression_example.py",
+            "terminal": "ml.school"
+          }
+        ]
+      },
+      {
+        "label": "Classification",
+        "description": "Classification algorithms and evaluation metrics.",
+        "file": "session3/classification.md",
+        "markdown": "session3/classification.md",
+        "actions": [
+          {
+            "label": "View Lesson",
+            "action": "file",
+            "target": "session3/classification.md"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "label": "Model Evaluation",
+    "description": "Learn how to evaluate and validate machine learning models.",
+    "file": "session4/evaluation.md",
+    "markdown": "session4/evaluation.md",
+    "actions": [
+      {
+        "label": "Open Session",
+        "action": "file",
+        "target": "session4/evaluation.md"
+      }
+    ],
+    "lessons": [
+      {
+        "label": "Cross-Validation",
+        "description": "Understanding cross-validation techniques.",
+        "file": "session4/cross_validation.md",
+        "markdown": "session4/cross_validation.md",
+        "actions": [
+          {
+            "label": "View Lesson",
+            "action": "file",
+            "target": "session4/cross_validation.md"
+          }
+        ]
+      },
+      {
+        "label": "Metrics and Scoring",
+        "description": "Different evaluation metrics for different problem types.",
+        "file": "session4/metrics.md",
+        "markdown": "session4/metrics.md",
+        "actions": [
+          {
+            "label": "View Lesson",
+            "action": "file",
+            "target": "session4/metrics.md"
+          }
+        ]
+      }
+    ]
+  }
+]
